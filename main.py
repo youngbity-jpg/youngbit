@@ -22,15 +22,13 @@ def send_telegram_message(message):
 def get_top_trading_value():
     today = datetime.datetime.now().strftime("%Y%m%d")
 
-    # KOSPI + KOSDAQ 거래대금
-    df_kospi = stock.get_market_trading_value_by_date(today, today, market="KOSPI")
-    df_kosdaq = stock.get_market_trading_value_by_date(today, today, market="KOSDAQ")
-
-    df = df_kospi.append(df_kosdaq)
+    # ✅ 전체 시장 거래대금 (KOSPI + KOSDAQ)
+    df = stock.get_market_trading_value_by_date(today, today)
 
     if df.empty:
         return "📊 거래대금 데이터가 없습니다.\n(휴장일일 수 있습니다)"
 
+    # 거래대금 기준 상위 20
     df = df.sort_values(by="거래대금", ascending=False).head(20)
 
     msg = f"📊 [오늘의 거래대금 상위 20]\n({today})\n\n"
