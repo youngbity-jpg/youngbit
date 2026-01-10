@@ -2,13 +2,10 @@ import requests
 from pykrx import stock
 import datetime
 import sys
+import os
 
-# ==========================================
-# 텔레그램 설정
-# ==========================================
-TELEGRAM_TOKEN = "8269518800:AAEYOa2ymfu8xOCKlPeM1HBGmZWZ4O6sLKQ"
-TELEGRAM_CHAT_ID = "6186312115"
-
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
