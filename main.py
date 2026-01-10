@@ -65,6 +65,9 @@ def get_top_trading_value():
         msg += f"{i}. {s['name']} ({s['market']})\n"
         msg += f"   └ {s['price']}원 ({s['rate']}) | {s['value_str']}백만\n"
 
+    if not top_stocks:
+    return "📊 오늘은 장이 열리지 않아 거래대금 데이터가 없습니다."
+
     return msg
 
 if __name__ == "__main__":
