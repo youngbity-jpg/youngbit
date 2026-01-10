@@ -3,6 +3,9 @@ from pykrx import stock
 import datetime
 import sys
 
+# ==========================================
+# 텔레그램 설정
+# ==========================================
 TELEGRAM_TOKEN = "8269518800:AAEYOa2ymfu8xOCKlPeM1HBGmZWZ4O6sLKQ"
 TELEGRAM_CHAT_ID = "6186312115"
 
@@ -16,8 +19,8 @@ def send_telegram_message(message):
 def get_top_trading_value():
     today = datetime.datetime.now().strftime("%Y%m%d")
 
-    # ✅ 시장 구분 인자 없음 (이게 핵심)
-    df = stock.get_market_trading_value_by_date(today, today)
+    # ✅ ticker="ALL" 이 핵심
+    df = stock.get_market_trading_value_by_date(today, today, "ALL")
 
     if df.empty:
         return "📊 거래대금 데이터가 없습니다.\n(휴장일일 수 있습니다)"
@@ -28,7 +31,7 @@ def get_top_trading_value():
 
     for i, (code, row) in enumerate(df.iterrows(), 1):
         name = stock.get_market_ticker_name(code)
-        value = int(row["거래대금"] / 100_000_000)
+        value = int(row["거래대금"] / 100_000_000)  # 억 단위
         msg += f"{i}. {name} : {value:,}억\n"
 
     return msg
