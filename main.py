@@ -6,8 +6,8 @@ import sys
 # ==========================================
 # 텔레그램 설정
 # ==========================================
-TELEGRAM_TOKEN = "여기에_본인_토큰"
-TELEGRAM_CHAT_ID = "여기에_본인_ID"
+TELEGRAM_TOKEN = "8269518800:AAEYOa2ymfu8xOCKlPeM1HBGmZWZ4O6sLKQ"
+TELEGRAM_CHAT_ID = "6186312115"
 
 
 def send_telegram_message(message):
