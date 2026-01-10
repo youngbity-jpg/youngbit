@@ -11,7 +11,7 @@ TELEGRAM_CHAT_ID = "6186312115"
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
-    requests.post(url, data=data)
+    requests.post(url, data=data,timeout=10)
 
 def get_top_trading_value():
     urls = {
@@ -22,7 +22,7 @@ def get_top_trading_value():
     results = []
 
     for market, url in urls.items():
-        res = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
+        res = requests.get(url,headers={"User-Agent": "Mozilla/5.0"},timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
 
         rows = soup.select("table.type_2 tr")
@@ -73,3 +73,5 @@ def get_top_trading_value():
 if __name__ == "__main__":
     message = get_top_trading_value()
     send_telegram_message(message)
+
+print("=== SCRIPT END ===")
