@@ -1,54 +1,56 @@
 import requests
-from bs4 import BeautifulSoup
 import datetime
 import os
+import sys
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message})
+    data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
+    requests.post(url, data=data, timeout=10)
 
 def get_naver_trading_value_top():
-    url = "https://stock.naver.com/market/stock/kr/stocklist/priceTop"
+    api_url = "https://stock.naver.com/api/domestic/market/stock/default"
+    params = {
+        "tradeType": "KRX",
+        "marketType": "ALL",
+        "orderType": "priceTop",
+        "startIdx": 0,
+        "pageSize": 100
+    }
+
     headers = {
         "User-Agent": "Mozilla/5.0"
     }
 
-    res = requests.get(url, headers=headers, timeout=10)
-    soup = BeautifulSoup(res.text, "html.parser")
+    res = requests.get(api_url, headers=headers, params=params, timeout=10)
+    data = res.json()
 
-    rows = soup.select("table tbody tr")
+    if "stocks" not in data:
+        return "📊 거래대금 데이터가 없습니다."
 
-    if not rows:
-        return "거래대금 데이터가 없습니다.\n(네이버 페이지 구조 변경 가능)"
+    stocks = data["stocks"]
+    if not stocks:
+        return "📊 거래대금 데이터가 없습니다."
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    msg = f"📊 장중 거래대금 TOP (네이버)\n({now} 기준)\n\n"
+    msg = f"📊 장중 거래대금 TOP 20\n({now} 기준)\n\n"
 
-    rank = 1
-    for row in rows[:20]:
-        cols = row.select("td")
-        if len(cols) < 6:
-            continue
-
-        name = cols[1].text.strip()
-        price = cols[2].text.strip()
-        rate = cols[4].text.strip()
-        value = cols[5].text.strip()
-
-        msg += f"{rank}. {name}\n"
-        msg += f"   └ {price}원 ({rate}) | {value}\n"
-        rank += 1
+    # 거래대금이 이미 orderType=priceTop 으로 정렬되어 있음
+    for i, stock in enumerate(stocks[:20], 1):
+        name = stock.get("stockName", "")
+        value = stock.get("accumulatedTradingValue", "")
+        msg += f"{i}. {name} : {value}\n"
 
     return msg
 
 def main():
-    msg = get_naver_trading_value_top()
-    send_telegram_message(msg)
-    print("Telegram message sent")
+    message = get_naver_trading_value_top()
+    send_telegram_message(message)
     print("=== SCRIPT END ===")
 
 if __name__ == "__main__":
     main()
+    sys.exit(0)
