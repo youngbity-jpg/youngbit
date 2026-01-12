@@ -1,56 +1,83 @@
 import requests
-import datetime
 import os
-import sys
+import datetime
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
-def send_telegram_message(message):
+def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    data = {"chat_id": TELEGRAM_CHAT_ID, "text": message}
-    requests.post(url, data=data, timeout=10)
+    requests.post(url, data={
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    })
 
-def get_naver_trading_value_top():
-    api_url = "https://stock.naver.com/api/domestic/market/stock/default"
-    params = {
-        "tradeType": "KRX",
-        "marketType": "ALL",
-        "orderType": "priceTop",
-        "startIdx": 0,
-        "pageSize": 100
-    }
+def parse_value(value_str):
+    # "3,504,671백만" → 3504671
+    return int(value_str.replace(",", "").replace("백만", "").strip())
+
+def get_top_trading_value():
+    url = (
+        "https://stock.naver.com/api/domestic/market/stock/default"
+        "?tradeType=KRX"
+        "&marketType=ALL"
+        "&orderType=valueTop"
+        "&startIdx=0"
+        "&pageSize=50"
+    )
 
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://stock.naver.com/"
     }
 
-    res = requests.get(api_url, headers=headers, params=params, timeout=10)
-    data = res.json()
+    res = requests.get(url, headers=headers)
+    data = res.json().get("result", {}).get("stocks", [])
 
-    if "stocks" not in data:
-        return "📊 거래대금 데이터가 없습니다."
+    if not data:
+        return None
 
-    stocks = data["stocks"]
-    if not stocks:
-        return "📊 거래대금 데이터가 없습니다."
+    stocks = []
+    for s in data:
+        try:
+            value = parse_value(s["accumulatedTradingValue"])
+            stocks.append({
+                "name": s["stockName"],
+                "market": s["stockExchangeType"]["nameKor"],
+                "price": s["closePrice"],
+                "rate": s["fluctuationsRatio"],
+                "value": value,
+                "value_str": s["accumulatedTradingValue"]
+            })
+        except:
+            continue
+
+    stocks = sorted(stocks, key=lambda x: x["value"], reverse=True)[:20]
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-    msg = f"📊 장중 거래대금 TOP 20\n({now} 기준)\n\n"
+    msg = f"📊 거래대금 상위 20 (장중)\n⏰ {now}\n\n"
 
-    # 거래대금이 이미 orderType=priceTop 으로 정렬되어 있음
-    for i, stock in enumerate(stocks[:20], 1):
-        name = stock.get("stockName", "")
-        value = stock.get("accumulatedTradingValue", "")
-        msg += f"{i}. {name} : {value}\n"
+    for i, s in enumerate(stocks, 1):
+        msg += (
+            f"{i}. {s['name']} ({s['market']})\n"
+            f"   {s['price']}원 ({s['rate']}%) | {s['value_str']}\n"
+        )
 
     return msg
 
 def main():
-    message = get_naver_trading_value_top()
-    send_telegram_message(message)
-    print("=== SCRIPT END ===")
+    # 주말 자동 스킵
+    if datetime.datetime.today().weekday() >= 5:
+        print("주말 → 종료")
+        return
+
+    msg = get_top_trading_value()
+    if not msg:
+        send_telegram("❌ 거래대금 데이터를 불러오지 못했습니다.")
+        return
+
+    send_telegram(msg)
+    print("Telegram message sent")
 
 if __name__ == "__main__":
     main()
-    sys.exit(0)
