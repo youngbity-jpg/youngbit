@@ -1,6 +1,7 @@
 import requests
 import os
 import datetime
+import json
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
@@ -32,7 +33,9 @@ def get_top_trading_value():
     }
 
     res = requests.get(url, headers=headers)
-    data = res.json().get("result", {}).get("stocks", [])
+
+    raw = json.loads(res.text)   # 🔥 핵심 수정
+    data = raw.get("result", {}).get("stocks", [])
 
     if not data:
         return None
