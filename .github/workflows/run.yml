@@ -2,8 +2,8 @@ name: Stock Trading Value Bot
 
 on:
   workflow_dispatch:   # 수동 실행 버튼
-  schedule:
-    - cron: '20 3 * * 1-5'   # 한국시간 12:00 (UTC 03:00) / 평일만
+#  schedule:
+#    - cron: '20 3 * * 1-5'   # 한국시간 12:00 (UTC 03:00) / 평일만
 
 jobs:
   run:
